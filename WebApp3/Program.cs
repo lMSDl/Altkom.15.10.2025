@@ -5,7 +5,7 @@ using WebApp3.Models;
 using WebApp3.Services;
 using WebApp3.Validators;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services
 builder.Services.AddSingleton<ITodoService, InMemoryTodoService>();
@@ -17,10 +17,10 @@ builder.Services.AddSwaggerGen();
 // Add ProblemDetails support
 builder.Services.AddProblemDetails();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // Get AppName from configuration and log it at startup
-var appName = app.Configuration["AppName"];
+string? appName = app.Configuration["AppName"];
 app.Logger.LogInformation("Application starting: {AppName}", appName);
 
 // Enable ProblemDetails middleware
@@ -29,14 +29,14 @@ app.UseStatusCodePages();
 // Enable Swagger in Development only
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    _ = app.UseSwagger();
+    _ = app.UseSwaggerUI();
 }
 
 // Use structured logging for HTTP requests
 app.Use(async (context, next) =>
 {
-    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    ILogger<Program> logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
     logger.LogInformation("HTTP {Method} {Path} received", context.Request.Method, context.Request.Path);
     await next();
 });
@@ -65,15 +65,19 @@ app.MapGet("/", () => "Hello World!");
 app.MapGet("/todos", async (ITodoService todoService, int page = 1, int pageSize = 10) =>
 {
     if (page < 1)
+    {
         return Results.Problem("Page must be greater than 0.", statusCode: 400);
-    
-    if (pageSize < 1 || pageSize > 100)
+    }
+
+    if (pageSize is < 1 or > 100)
+    {
         return Results.Problem("PageSize must be between 1 and 100.", statusCode: 400);
+    }
 
-    var (items, totalCount) = await todoService.GetAllAsync(page, pageSize);
-    var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+    (List<Todo> items, int totalCount) = await todoService.GetAllAsync(page, pageSize);
+    int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-    var response = new PaginatedTodosResponse
+    PaginatedTodosResponse response = new()
     {
         Items = items.Select(t => new TodoResponse
         {
@@ -96,12 +100,14 @@ app.MapGet("/todos", async (ITodoService todoService, int page = 1, int pageSize
 // GET /todos/{id} - Get todo by id
 app.MapGet("/todos/{id:int}", async (ITodoService todoService, int id) =>
 {
-    var todo = await todoService.GetByIdAsync(id);
-    
-    if (todo == null)
-        return Results.Problem($"Todo with id {id} not found.", statusCode: 404);
+    Todo? todo = await todoService.GetByIdAsync(id);
 
-    var response = new TodoResponse
+    if (todo == null)
+    {
+        return Results.Problem($"Todo with id {id} not found.", statusCode: 404);
+    }
+
+    TodoResponse response = new()
     {
         Id = todo.Id,
         Title = todo.Title,
@@ -117,21 +123,23 @@ app.MapGet("/todos/{id:int}", async (ITodoService todoService, int id) =>
 // POST /todos - Create new todo
 app.MapPost("/todos", async (ITodoService todoService, CreateTodoRequest request, HttpContext httpContext) =>
 {
-    var errors = TodoValidator.Validate(request.Title, request.DueDate);
-    
-    if (errors.Any())
-        return Results.ValidationProblem(errors.ToDictionary(e => e, e => new[] { e }));
+    List<string> errors = TodoValidator.Validate(request.Title, request.DueDate);
 
-    var todo = new Todo
+    if (errors.Any())
+    {
+        return Results.ValidationProblem(errors.ToDictionary(e => e, e => new[] { e }));
+    }
+
+    Todo todo = new()
     {
         Title = request.Title,
         IsDone = request.IsDone,
         DueDate = request.DueDate
     };
 
-    var created = await todoService.CreateAsync(todo);
+    Todo created = await todoService.CreateAsync(todo);
 
-    var response = new TodoResponse
+    TodoResponse response = new()
     {
         Id = created.Id,
         Title = created.Title,
@@ -147,24 +155,28 @@ app.MapPost("/todos", async (ITodoService todoService, CreateTodoRequest request
 // PUT /todos/{id} - Update todo
 app.MapPut("/todos/{id:int}", async (ITodoService todoService, int id, UpdateTodoRequest request) =>
 {
-    var errors = TodoValidator.Validate(request.Title, request.DueDate);
-    
-    if (errors.Any())
-        return Results.ValidationProblem(errors.ToDictionary(e => e, e => new[] { e }));
+    List<string> errors = TodoValidator.Validate(request.Title, request.DueDate);
 
-    var todo = new Todo
+    if (errors.Any())
+    {
+        return Results.ValidationProblem(errors.ToDictionary(e => e, e => new[] { e }));
+    }
+
+    Todo todo = new()
     {
         Title = request.Title,
         IsDone = request.IsDone,
         DueDate = request.DueDate
     };
 
-    var updated = await todoService.UpdateAsync(id, todo);
-    
-    if (updated == null)
-        return Results.Problem($"Todo with id {id} not found.", statusCode: 404);
+    Todo? updated = await todoService.UpdateAsync(id, todo);
 
-    var response = new TodoResponse
+    if (updated == null)
+    {
+        return Results.Problem($"Todo with id {id} not found.", statusCode: 404);
+    }
+
+    TodoResponse response = new()
     {
         Id = updated.Id,
         Title = updated.Title,
@@ -180,12 +192,9 @@ app.MapPut("/todos/{id:int}", async (ITodoService todoService, int id, UpdateTod
 // DELETE /todos/{id} - Delete todo
 app.MapDelete("/todos/{id:int}", async (ITodoService todoService, int id) =>
 {
-    var deleted = await todoService.DeleteAsync(id);
-    
-    if (!deleted)
-        return Results.Problem($"Todo with id {id} not found.", statusCode: 404);
+    bool deleted = await todoService.DeleteAsync(id);
 
-    return Results.NoContent();
+    return !deleted ? Results.Problem($"Todo with id {id} not found.", statusCode: 404) : Results.NoContent();
 })
 .WithName("DeleteTodo")
 .WithOpenApi();

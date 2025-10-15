@@ -21,6 +21,8 @@ namespace ConsoleApp
 
     internal class DataService
     {
+        //generate method that returns random number from Shared
+
     }
 
 

@@ -1,0 +1,4 @@
+[*.cs]
+indent_size = 2
+dotnet_style_prefer_auto_properties = true
+csharp_style_expression_bodied_methods = when_on_single_line

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>OrderServiceSnippet</Title>
+      <Shortcut>orderservice</Shortcut>
+      <Description>Tworzy szkielet serwisu OrderService z promptem dla Copilota</Description>
+      <Author>Szkolenie GitHub Copilot</Author>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>Name</ID>
+          <Default>Order</Default>
+          <ToolTip>Nazwa encji lub serwisu</ToolTip>
+        </Literal>
+      </Declarations>
+      <Code Language="csharp">
+        <![CDATA[
+// Service should validate input, check stock availability, 
+// save the order in repository and return Result<$Name$Response>.
+// Use async/await and proper exception handling.
+
+public interface I$Name$Service
+{
+    Task<Result<$Name$Response>> ExecuteAsync($Name$Request request);
+}
+
+public class $Name$Service : I$Name$Service
+{
+    private readonly I$Name$Repository _repository;
+    private readonly IStockService _stock;
+
+    public $Name$Service(I$Name$Repository repository, IStockService stock)
+    {
+        _repository = repository;
+        _stock = stock;
+    }
+
+    public async Task<Result<$Name$Response>> ExecuteAsync($Name$Request request)
+    {
+        // Copilot: implement the workflow described above
+    }
+}
+]]>
+      </Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

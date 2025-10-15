@@ -3,6 +3,15 @@
 // private int Add(int a, int b) => a + b; -> private, int, Add, (, int, a, ,, int, b, ), =>, a, +, b, ;
 
 
+using MathNet.Numerics;
+
+//generate list od 100 random ints
+List<int> randomInts = Enumerable.Range(1, 1000).Select(x => Random.Shared.Next()).ToList();
+
+
+
+Console.WriteLine();
+
 object GetUserById(int id)
 {
     return new { Id = id, Name = "User" + id };
